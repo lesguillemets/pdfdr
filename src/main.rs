@@ -18,9 +18,10 @@ fn main() {
     );
     for file in read_files(&files_to_read).iter().filter(|p| is_photo(p)) {
         match get_date_taken(&file) {
-            None => println!("Error on {}", &file),
+            None => println!("EEEE Error on {}", &file),
             Some(d) => {
                 // because the result from date_taken includes newline at the end
+                print!("{} : {}", get_base_name(&file), d);
                 bwriter.write_fmt(format_args!("{},{},{}", get_base_name(&file), &file, d));
             }
         }
@@ -31,7 +32,7 @@ fn get_date_taken(file: &str) -> Option<String> {
     let output = Command::new("exiftool")
         .arg("-datetimeoriginal")
         .arg("-s3")
-        .args(&["-d", "%s,%Y:%m:%H:%M:%S"]) // %t for \t is somehow not working
+        .args(&["-d", "%s,%Y:%m:%d-%H:%M:%S"]) // %t for \t is somehow not working
         .arg(file)
         .output()
         .expect("failed");
@@ -61,7 +62,7 @@ fn read_files(fname: &str) -> Vec<String> {
 }
 
 fn is_photo(fname: &str) -> bool {
-    fname.ends_with(".JPG") || fname.ends_with(".jpg")
+    fname.ends_with(".JPG")
 }
 
 fn get_base_name(f: &str) -> &str {
