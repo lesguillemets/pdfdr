@@ -7,6 +7,7 @@ use std::path::Path;
 
 fn main() {
     let files_to_read = args().nth(1).expect("arg");
+    let prefix = args().nth(2).unwrap_or("".to_string());
     for file in read_files(&files_to_read).iter().filter(|p| is_photo(p)) {
         match get_date_taken(&file) {
             None => println!("Error on {}", &file),
@@ -42,7 +43,10 @@ fn check_empty_entry(ent: String) -> String {
 fn read_files(fname: &str) -> Vec<String> {
     let f = File::open(fname).expect("file not found");
     let reader = BufReader::new(f);
-    reader.lines().map(|l| l.unwrap()).collect()
+    reader
+        .lines()
+        .map(|l| l.expect(format!("unreadable file {}", fname)))
+        .collect()
 }
 
 fn is_photo(fname: &str) -> bool {
