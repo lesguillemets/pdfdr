@@ -1,17 +1,28 @@
 use std::process::Command;
 use std::env::args;
-use std::fs::File;
-use std::io::BufReader;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, BufWriter, Write};
 use std::io::prelude::*;
 use std::path::Path;
 
 fn main() {
     let files_to_read = args().nth(1).expect("arg");
-    let prefix = args().nth(2).unwrap_or("".to_string());
+    let file_to_write = args().nth(2).expect("arg2");
+    let prefix = args().nth(3).unwrap_or("".to_string());
+    let mut bwriter = BufWriter::new(
+        OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(file_to_write)
+            .unwrap(),
+    );
     for file in read_files(&files_to_read).iter().filter(|p| is_photo(p)) {
         match get_date_taken(&file) {
             None => println!("Error on {}", &file),
-            Some(d) => println!("{},{},{}", get_base_name(&file), &file, d),
+            Some(d) => {
+                // because the result from date_taken includes newline at the end
+                bwriter.write_fmt(format_args!("{},{},{}", get_base_name(&file), &file, d));
+            }
         }
     }
 }
@@ -45,12 +56,12 @@ fn read_files(fname: &str) -> Vec<String> {
     let reader = BufReader::new(f);
     reader
         .lines()
-        .map(|l| l.expect(format!("unreadable file {}", fname)))
+        .map(|l| l.expect(&format!("unreadable file {}", fname)))
         .collect()
 }
 
 fn is_photo(fname: &str) -> bool {
-    fname.ends_with(".JPG")
+    fname.ends_with(".JPG") || fname.ends_with(".jpg")
 }
 
 fn get_base_name(f: &str) -> &str {
